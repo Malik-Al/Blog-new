@@ -5,6 +5,7 @@ from webapp.models import Article, Comment
 
 
 class ArticleForm(forms.ModelForm):
+    tags = forms.CharField(max_length=200, required=False, label='Тэги')
     class Meta:
         model = Article
         exclude = []

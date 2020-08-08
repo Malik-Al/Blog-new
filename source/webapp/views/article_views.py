@@ -33,15 +33,34 @@ class IndexView(ListView):
         context = super().get_context_data(object_list=object_list, **kwargs)
         if self.query:
             context['query'] = urlencode({'search': self.query})
+        tag_filter = self.request.GET
+        if 'tag' in tag_filter:
+            context['articles'] = Article.objects.filter(tags__name=tag_filter.get('tag'))
         context['form'] = self.form
         return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.query:
-            queryset = queryset.filter(Q(title__icontains=self.query) | Q(author__icontains=self.query))
+            queryset = queryset.filter(Q(title__icontains=self.query) | Q(author__icontains=self.query) | Q(tags__name__iexact=self.query))
         return queryset
 
+
+
+    def form_valid(self, form):
+        self.object = form.save()
+        self.parser()
+        return redirect(self.get_success_url())
+
+    def parser(self):
+        tags = self.request.POST.get('tags')
+        tag_list = tags.split(',')
+        for tag in tag_list:
+            tag, created = Tag.objects.get_or_create(name=tag)
+            self.object.tags.add(tag)
+
+    def get_success_url(self):
+        return reverse('article_view', kwargs={'pk': self.object.pk})
 
 
 
@@ -93,8 +112,43 @@ class ArticleUpdateView(UpdateView):
     form_class = ArticleForm
     context_object_name = 'article'
 
+
     def get_success_url(self):
         return reverse('article_view', kwargs={'pk': self.object.pk})
+
+    def update_tag(self):
+        tags = self.request.POST.get('tags')
+        tags_list = tags.split(',')
+        self.object.tags.clear()
+        for tag in tags_list:
+            tag, created = Tag.objects.get_or_create(name=tag)
+            self.object.tags.add(tag)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=None)
+        querry = self.object.tags.values('name')
+        res = ''
+        for tag in querry:
+            res += tag['name'] + ','
+        form.fields['tags'].initial = res.replace(' ', '').strip(',')
+        return form
+
+    def form_valid(self, form):
+        self.object = form.save()
+        self.update_tag()
+        return redirect(self.get_success_url())
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
