@@ -27,3 +27,8 @@ class ArticleCommentForm(forms.ModelForm):
 
 class SimpleSearchForm(forms.Form):
     search = forms.CharField(max_length=100, required=False, label="Найти")
+
+
+
+
+#Tag.objects.get_or_create(name='Food')[0].id
