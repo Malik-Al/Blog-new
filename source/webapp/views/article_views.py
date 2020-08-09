@@ -5,9 +5,9 @@ from django.urls import reverse_lazy, reverse
 from django.utils.http import urlencode
 from django.views import View
 
-from webapp.forms import ArticleForm, CommentForm, SimpleSearchForm
+from webapp.forms import ArticleForm, CommentForm, SimpleSearchForm, FullSearchForm
 from webapp.models import Article
-from django.views.generic import TemplateView, ListView, DeleteView, UpdateView
+from django.views.generic import TemplateView, ListView, DeleteView, UpdateView, FormView
 
 
 class IndexView(ListView):
@@ -63,6 +63,39 @@ class IndexView(ListView):
         return reverse('article_view', kwargs={'pk': self.object.pk})
 
 
+
+
+
+class ArticleSearchView(FormView):
+    template_name = 'article/search.html'
+    form_class = FullSearchForm
+
+    def form_valid(self, form):
+        text = form.cleaned_data.get('text')
+        query = Q()
+        if text:
+            query = query & self.get_text_query(form, text)
+
+        articles = Article.objects.filter(query).distinct()
+        context = self.get_context_data(articles=articles)
+        return self.render_to_response(context)
+
+
+    def get_text_query(self, form, text):
+        query = Q()
+        in_title = form.cleaned_data.get('in_title')
+        if in_title:
+            query = query | Q(title__icontains=text)
+        in_text = form.cleaned_data.get('in_text')
+        if in_text:
+            query = query | Q(text__icontains=text)
+        in_tags = form.cleaned_data.get('in_tags')
+        if in_tags:
+            query = query | Q(tags__name__iexact=text)
+        in_comment_text = form.cleaned_data.get('in_comment_text')
+        if in_comment_text:
+            query = query | Q(comments__text__icontains=text)
+        return query
 
 
 class ArticleView(TemplateView):
@@ -137,15 +170,6 @@ class ArticleUpdateView(UpdateView):
         self.object = form.save()
         self.update_tag()
         return redirect(self.get_success_url())
-
-
-
-
-
-
-
-
-
 
 
 
