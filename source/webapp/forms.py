@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+
 from webapp.models import Article, Comment
 
 
@@ -8,7 +10,13 @@ class ArticleForm(forms.ModelForm):
     tags = forms.CharField(max_length=200, required=False, label='Тэги')
     class Meta:
         model = Article
-        exclude = []
+        exclude = ['created_at, updated_at']
+
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if len(title) <= 10:
+            raise ValidationError('Title is too short!')
+        return title
 
 
 
