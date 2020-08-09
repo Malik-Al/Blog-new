@@ -18,6 +18,11 @@ class ArticleForm(forms.ModelForm):
             raise ValidationError('Title is too short!')
         return title
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data['text'] == cleaned_data['title']:
+            raise ValidationError("Text of the article should not duplicate it's title!")
+        return cleaned_data
 
 
 
