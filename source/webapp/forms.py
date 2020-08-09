@@ -63,4 +63,15 @@ class FullSearchForm(forms.Form):
                 raise ValidationError('One of the following checkboxes should be checked: '
                                   'In title, In text, In tags, In comment text ',
                                   code='text_search_criteria_empty')
+        if data.get('author'):
+            if not (data.get('article_author') or data.get('comment_author')):
+                raise ValidationError('One of the following checkboxes should be checked: '
+                                      'articles, comments  ',
+                                      code='author_search_criteria_empty')
+
+
+        if not data.get('text') and not data.get('author'):
+            raise ValidationError('One of the following checkboxes should be checked: '
+                                  'Text search or Author search')
+
         return data
